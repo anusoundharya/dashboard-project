@@ -1,196 +1,254 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import useFetch from './hooks/useFetch';
-import { 
-  mockDashboard, 
-  mockStudents, 
-  mockProfile, 
-  mockCourses, 
-  mockAttendance, 
-  mockNotifications 
-} from './mockData';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 
-// ==========================================
-// 1. DASHBOARD VIEW
-// ==========================================
-function DashboardView() {
-  const { data, loading, error } = useFetch('https://api.failed/dashboard', mockDashboard);
-  if (loading) return <h3>Loading Dashboard Overview...</h3>;
-  return (
-    <div>
-      <h2>📊 Dashboard Overview</h2>
-      {error && <p style={{ color: 'orange', fontWeight: 'bold' }}>⚠️ {error}</p>}
-      <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-        <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', flex: 1 }}>
-          <h3>Total Students</h3>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#2c3e50' }}>{data?.totalStudents}</p>
-        </div>
-        <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', flex: 1 }}>
-          <h3>Average Attendance</h3>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#27ae60' }}>{data?.averageAttendance}</p>
-        </div>
-        <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', flex: 1 }}>
-          <h3>Active Courses</h3>
-          <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#2980b9' }}>{data?.activeCourses}</p>
-        </div>
-      </div>
-    </div>
+// 1. Predefined Mock Data (Fallback Source)
+const MOCK_STUDENTS = [
+  { id: "S101", name: "Anu Soundharya", course: "React JS", attendance: "95%", status: "Active" },
+  { id: "S102", name: "Rahul Kumar", course: "Node JS", attendance: "88%", status: "Active" },
+  { id: "S103", name: "Priya Dharshini", course: "Python", attendance: "92%", status: "Inactive" },
+  { id: "S104", name: "Vijay Sethu", course: "UI/UX Design", attendance: "79%", status: "Active" }
+];
+
+const MOCK_COURSES = ["React JS Fullstack", "Node JS Backend", "Python Data Science", "UI/UX Advanced"];
+const MOCK_NOTIFICATIONS = [
+  "System Alert: API server failed! Safely loaded offline mock database data.",
+  "Reminder: React assignment deadline is tomorrow end of day."
+];
+
+function App() {
+  // Navigation & UI States
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [darkMode, setDarkMode] = useState(false);
+  
+  // Data States
+  const [students, setStudents] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // 2. Axios Fetch with Try-Catch Fallback Requirement
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Intentionally using an invalid URL as required by assignment
+        await axios.get('https://api.invalid-student-endpoint.com/data');
+      } catch (error) {
+        console.log("API Failed gracefully. Fetching predefined mock JSON data instead.");
+        // Catch block safely loads predefined constants
+        setStudents(MOCK_STUDENTS);
+        setCourses(MOCK_COURSES);
+        setNotifications(MOCK_NOTIFICATIONS);
+      } finally {
+        // Stop loading state
+        setTimeout(() => setLoading(false), 500); // 0.5s smooth transition delay
+      }
+    };
+    fetchData();
+  }, []);
+
+  // 3. Advanced Search Filtering Logic
+  const filteredStudents = students.filter(student =>
+    student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    student.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
-}
 
-// ==========================================
-// 2. STUDENT LIST VIEW
-// ==========================================
-function StudentListView() {
-  const { data: students, loading, error } = useFetch('https://api.failed/students', mockStudents);
-  if (loading) return <h3>Loading Students Directory...</h3>;
   return (
-    <div>
-      <h2>👥 Student Directory</h2>
-      {error && <p style={{ color: 'orange', fontWeight: 'bold' }}>⚠️ {error}</p>}
-      <table border="1" cellPadding="12" style={{ width: '100%', marginTop: '20px', borderCollapse: 'collapse', backgroundColor: '#fff' }}>
-        <thead>
-          <tr style={{ backgroundColor: '#f2f2f2' }}>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Major</th>
-          </tr>
-        </thead>
-        <tbody>
-          {students?.map(s => (
-            <tr key={s.id}>
-              <td>{s.id}</td>
-              <td><b>{s.name}</b></td>
-              <td>{s.email}</td>
-              <td>{s.major}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+    <div style={{
+      backgroundColor: darkMode ? '#1e1e24' : '#f4f6f9',
+      color: darkMode ? '#ffffff' : '#333333',
+      minHeight: '100vh',
+      fontFamily: 'Segoe UI, sans-serif',
+      transition: 'all 0.3s ease'
+    }}>
+      
+      {/* HEADER NAVBAR */}
+      <header style={{
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        padding: '15px 30px', 
+        backgroundColor: darkMode ? '#111115' : '#0056b3', 
+        color: '#fff',
+        alignItems: 'center'
+      }}>
+        <h2>🎓 Student Dashboard Project</h2>
+        <button 
+          onClick={() => setDarkMode(!darkMode)}
+          style={{
+            padding: '8px 15px', 
+            borderRadius: '5px', 
+            cursor: 'pointer', 
+            border: 'none',
+            fontWeight: 'bold',
+            backgroundColor: darkMode ? '#fff' : '#222',
+            color: darkMode ? '#222' : '#fff'
+          }}
+        >
+          {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
+        </button>
+      </header>
 
-// ==========================================
-// 3. STUDENT PROFILE VIEW
-// ==========================================
-function StudentProfileView() {
-  const { data: profile, loading, error } = useFetch('https://api.failed/profile', mockProfile);
-  if (loading) return <h3>Loading Profile Details...</h3>;
-  return (
-    <div>
-      <h2>👤 My Profile</h2>
-      {error && <p style={{ color: 'orange', fontWeight: 'bold' }}>⚠️ {error}</p>}
-      <div style={{ backgroundColor: '#fff', padding: '25px', borderRadius: '8px', marginTop: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', maxWidth: '500px' }}>
-        <p><b>Name:</b> {profile?.name}</p>
-        <p><b>Age:</b> {profile?.age} Yrs</p>
-        <p><b>Current GPA:</b> ✨ {profile?.gpa}</p>
-        <p><b>Bio:</b> {profile?.bio}</p>
-      </div>
-    </div>
-  );
-}
-
-// ==========================================
-// 4. COURSES VIEW
-// ==========================================
-function CoursesView() {
-  const { data: courses, loading, error } = useFetch('https://api.failed/courses', mockCourses);
-  if (loading) return <h3>Loading Available Courses...</h3>;
-  return (
-    <div>
-      <h2>📚 Academic Courses</h2>
-      {error && <p style={{ color: 'orange', fontWeight: 'bold' }}>⚠️ {error}</p>}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px', marginTop: '20px' }}>
-        {courses?.map(c => (
-          <div key={c.id} style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', borderLeft: '5px solid #2980b9' }}>
-            <h4 style={{ margin: '0 0 10px 0', color: '#2980b9' }}>{c.code}</h4>
-            <p style={{ margin: 0, fontWeight: 'bold' }}>{c.title}</p>
-          </div>
+      {/* NAVIGATION TABS (6 Mandatory Pages) */}
+      <nav style={{ display: 'flex', justifyContent: 'center', gap: '10px', padding: '15px', backgroundColor: '#e9ecef' }}>
+        {['dashboard', 'student-list', 'student-profile', 'courses', 'attendance', 'notifications'].map((tab) => (
+          <button 
+            key={tab} 
+            onClick={() => setActiveTab(tab)}
+            style={{
+              padding: '10px 18px',
+              borderRadius: '20px',
+              border: 'none',
+              cursor: 'pointer',
+              textTransform: 'capitalize',
+              fontWeight: activeTab === tab ? 'bold' : 'normal',
+              backgroundColor: activeTab === tab ? '#0056b3' : '#fff',
+              color: activeTab === tab ? '#fff' : '#333',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+            }}
+          >
+            {tab.replace('-', ' ')}
+          </button>
         ))}
-      </div>
-    </div>
-  );
-}
+      </nav>
 
-// ==========================================
-// 5. ATTENDANCE VIEW
-// ==========================================
-function AttendanceView() {
-  const { data: attendance, loading, error } = useFetch('https://api.failed/attendance', mockAttendance);
-  if (loading) return <h3>Loading Attendance Logs...</h3>;
-  return (
-    <div>
-      <h2>📝 Attendance Tracker</h2>
-      {error && <p style={{ color: 'orange', fontWeight: 'bold' }}>⚠️ {error}</p>}
-      <ul style={{ listStyleType: 'none', padding: 0, marginTop: '20px' }}>
-        {attendance?.map((a, index) => (
-          <li key={index} style={{ backgroundColor: '#fff', padding: '15px', marginBottom: '10px', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-            <span>📅 {a.date}</span>
-            <span style={{ fontWeight: 'bold', color: a.status === 'Present' ? '#27ae60' : '#c0392b' }}>{a.status}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-// ==========================================
-// 6. NOTIFICATIONS VIEW
-// ==========================================
-function NotificationsView() {
-  const { data: notifications, loading, error } = useFetch('https://api.failed/notifications', mockNotifications);
-  if (loading) return <h3>Loading Updates...</h3>;
-  return (
-    <div>
-      <h2>🔔 Live Announcements</h2>
-      {error && <p style={{ color: 'orange', fontWeight: 'bold' }}>⚠️ {error}</p>}
-      <div style={{ marginTop: '20px' }}>
-        {notifications?.map(n => (
-          <div key={n.id} style={{ backgroundColor: '#fff', padding: '15px', marginBottom: '12px', borderRadius: '6px', borderLeft: '5px solid #e74c3c', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-            <p style={{ margin: 0 }}>{n.message}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ==========================================
-// MAIN APP CONTENT LAYOUT
-// ==========================================
-export default function App() {
-  return (
-    <Router>
-      <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Arial, sans-serif', backgroundColor: '#f4f6f9' }}>
+      {/* MAIN LAYOUT WINDOW */}
+      <main style={{ padding: '30px', maxWidth: '1200px', margin: '0 auto' }}>
         
-        {/* SIDEBAR NAVIGATION CONTROL */}
-        <nav style={{ width: '260px', backgroundColor: '#2c3e50', padding: '25px 20px', color: 'white' }}>
-          <h2 style={{ textAlign: 'center', marginBottom: '40px', color: '#ecf0f1', letterSpacing: '1px' }}>🎓 Dashboard</h2>
-          <ul style={{ listStyleType: 'none', padding: 0 }}>
-            <li style={{ margin: '20px 0' }}><Link to="/" style={{ color: '#bdc3c7', textDecoration: 'none', fontSize: '16px', display: 'block' }}>📊 Dashboard</Link></li>
-            <li style={{ margin: '20px 0' }}><Link to="/students" style={{ color: '#bdc3c7', textDecoration: 'none', fontSize: '16px', display: 'block' }}>👥 Student List</Link></li>
-            <li style={{ margin: '20px 0' }}><Link to="/profile" style={{ color: '#bdc3c7', textDecoration: 'none', fontSize: '16px', display: 'block' }}>👤 Profile</Link></li>
-            <li style={{ margin: '20px 0' }}><Link to="/courses" style={{ color: '#bdc3c7', textDecoration: 'none', fontSize: '16px', display: 'block' }}>📚 Courses</Link></li>
-            <li style={{ margin: '20px 0' }}><Link to="/attendance" style={{ color: '#bdc3c7', textDecoration: 'none', fontSize: '16px', display: 'block' }}>📝 Attendance</Link></li>
-            <li style={{ margin: '20px 0' }}><Link to="/notifications" style={{ color: '#bdc3c7', textDecoration: 'none', fontSize: '16px', display: 'block' }}>🔔 Notifications</Link></li>
-          </ul>
-        </nav>
+        {loading ? (
+          <div style={{ textAlign: 'center', fontSize: '20px', padding: '5px' }}>
+            🔄 Loading data from server, please wait...
+          </div>
+        ) : (
+          <div>
+            
+            {/* PAGE 1: DASHBOARD */}
+            {activeTab === 'dashboard' && (
+              <div>
+                <h3>Dashboard Summary</h3>
+                <div style={{ display: 'flex', gap: '20px', marginTop: '15px' }}>
+                  <div style={{ flex: 1, padding: '20px', background: darkMode ? '#2d2d35' : '#fff', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+                    <h4>Total Students</h4>
+                    <p style={{ fontSize: '28px', color: '#0056b3', fontWeight: 'bold' }}>{students.length}</p>
+                  </div>
+                  <div style={{ flex: 1, padding: '20px', background: darkMode ? '#2d2d35' : '#fff', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+                    <h4>Active Batches</h4>
+                    <p style={{ fontSize: '28px', color: '#28a745', fontWeight: 'bold' }}>{courses.length}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
-        {/* MAIN DISPLAY WINDOW */}
-        <main style={{ flex: 1, padding: '40px', overflowY: 'auto' }}>
-          <Routes>
-            <Route path="/" element={<DashboardView />} />
-            <Route path="/students" element={<StudentListView />} />
-            <Route path="/profile" element={<StudentProfileView />} />
-            <Route path="/courses" element={<CoursesView />} />
-            <Route path="/attendance" element={<AttendanceView />} />
-            <Route path="/notifications" element={<NotificationsView />} />
-          </Routes>
-        </main>
+            {/* PAGE 2: STUDENT LIST (WITH ADVANCED FILTER) */}
+            {activeTab === 'student-list' && (
+              <div>
+                <h3>Student Directory</h3>
+                <input 
+                  type="text" 
+                  placeholder="🔍 Search student by name or ID..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%', padding: '12px', margin: '15px 0', borderRadius: '5px',
+                    border: '1px solid #ccc', boxSizing: 'border-box'
+                  }}
+                />
+                <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px', background: darkMode ? '#2d2d35' : '#fff' }}>
+                  <thead>
+                    <tr style={{ background: '#0056b3', color: '#fff', textAlign: 'left' }}>
+                      <th style={{ padding: '12px' }}>ID</th>
+                      <th style={{ padding: '12px' }}>Name</th>
+                      <th style={{ padding: '12px' }}>Course</th>
+                      <th style={{ padding: '12px' }}>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredStudents.length > 0 ? filteredStudents.map(s => (
+                      <tr key={s.id} style={{ borderBottom: '1px solid #ddd' }}>
+                        <td style={{ padding: '12px' }}>{s.id}</td>
+                        <td style={{ padding: '12px', fontWeight: 'bold' }}>{s.name}</td>
+                        <td style={{ padding: '12px' }}>{s.course}</td>
+                        <td style={{ padding: '12px', color: s.status === 'Active' ? '#28a745' : '#dc3545' }}>{s.status}</td>
+                      </tr>
+                    )) : (
+                      <tr><td colSpan="4" style={{ padding: '20px', textAlign: 'center' }}>No students found matching your search.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
-      </div>
-    </Router>
+            {/* PAGE 3: STUDENT PROFILE */}
+            {activeTab === 'student-profile' && (
+              <div>
+                <h3>My Profile View</h3>
+                <div style={{ display: 'flex', gap: '20px', marginTop: '15px', background: darkMode ? '#2d2d35' : '#fff', padding: '20px', borderRadius: '8px' }}>
+                  <div style={{ width: '100px', height: '100px', borderRadius: '50%', backgroundColor: '#0056b3', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px' }}>
+                    AS
+                  </div>
+                  <div>
+                    <h4>Anu Soundharya (Individual Intern)</h4>
+                    <p style={{ margin: '5px 0' }}><strong>Role:</strong> Frontend React Developer</p>
+                    <p style={{ margin: '5px 0' }}><strong>Current Repo Status:</strong> Linked & Deployed Clean</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* PAGE 4: COURSES */}
+            {activeTab === 'courses' && (
+              <div>
+                <h3>Offered Technical Courses</h3>
+                <ul style={{ listStyleType: 'none', padding: 0, marginTop: '15px' }}>
+                  {courses.map((course, idx) => (
+                    <li key={idx} style={{ padding: '15px', background: darkMode ? '#2d2d35' : '#fff', marginBottom: '10px', borderRadius: '5px', borderLeft: '5px solid #0056b3' }}>
+                      🚀 {course}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* PAGE 5: ATTENDANCE */}
+            {activeTab === 'attendance' && (
+              <div>
+                <h3>Attendance Track Logs</h3>
+                <div style={{ marginTop: '15px' }}>
+                  {students.map(s => (
+                    <div key={s.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px', background: darkMode ? '#2d2d35' : '#fff', marginBottom: '8px', borderRadius: '5px' }}>
+                      <span><strong>{s.name}</strong> ({s.id})</span>
+                      <span style={{ color: '#0056b3', fontWeight: 'bold' }}>{s.attendance} Present Rate</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* PAGE 6: NOTIFICATIONS WITH SAFE ALERT PANEL */}
+            {activeTab === 'notifications' && (
+              <div>
+                <h3>System Notifications</h3>
+                <div style={{ marginTop: '15px' }}>
+                  {notifications.map((note, idx) => (
+                    <div key={idx} style={{ 
+                      padding: '15px', 
+                      backgroundColor: idx === 0 ? '#fff3cd' : '#d1ecf1', 
+                      color: idx === 0 ? '#856404' : '#0c5460',
+                      marginBottom: '10px', 
+                      borderRadius: '5px',
+                      borderLeft: '5px solid'
+                    }}>
+                      ⚠️ {note}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
+export default App;
