@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Predefined Mock Data Source
+// 1. Predefined Mock Data Source
 const MOCK_STUDENTS = [
   { id: "S101", name: "Anu Soundharya", course: "React JS", attendance: "95%", status: "Active" },
   { id: "S102", name: "Rahul Kumar", course: "Node JS", attendance: "88%", status: "Active" },
@@ -20,19 +20,28 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [darkMode, setDarkMode] = useState(false);
   
+  // EXTRA FEATURE 1: Live Digital Clock State
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString());
+
   // Data States
   const [students, setStudents] = useState(MOCK_STUDENTS);
   const [courses, setCourses] = useState(MOCK_COURSES);
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-
-  // EXTRA ADVANCED FEATURE 1: Status Filter State (All / Active / Inactive)
   const [statusFilter, setStatusFilter] = useState("All");
 
-  // Form Inputs State (Add Student Feature)
+  // Form Inputs State
   const [newStudentName, setNewStudentName] = useState("");
   const [newStudentCourse, setNewStudentCourse] = useState("React JS");
+
+  // Effect for Live Digital Clock (Updates every second)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   // Axios Fetch Fallback Logic
   useEffect(() => {
@@ -48,7 +57,7 @@ export default function App() {
     fetchData();
   }, []);
 
-  // Advanced Search + EXTRA Status Filter Combined Logic
+  // Advanced Search + Status Filter Combined Logic
   const filteredStudents = students.filter(student => {
     const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           student.id.toLowerCase().includes(searchQuery.toLowerCase());
@@ -57,7 +66,7 @@ export default function App() {
     return matchesSearch && student.status === statusFilter;
   });
 
-  // EXTRA ADVANCED FEATURE 2: Attendance Analytics Calculations
+  // Attendance Analytics Calculations
   const totalStudentsCount = students.length;
   const avgAttendance = totalStudentsCount > 0 
     ? Math.round(students.reduce((acc, s) => acc + parseInt(s.attendance), 0) / totalStudentsCount) 
@@ -74,13 +83,22 @@ export default function App() {
       id: nextId,
       name: newStudentName,
       course: newStudentCourse,
-      attendance: "80%", // Dynamic default test value to test low attendance logic
+      attendance: "82%", 
       status: "Active"
     };
 
     setStudents([...students, newStudent]);
     setNewStudentName(""); 
     alert("Success! Added to the list.");
+  };
+
+  // EXTRA FEATURE 2: Delete Student Functionality (Fixed Clean Syntax)
+  const handleDeleteStudent = (studentId, studentName) => {
+    const confirmDelete = window.confirm("Are you sure you want to remove " + studentName + "?");
+    if (confirmDelete) {
+      const updatedList = students.filter(s => s.id !== studentId);
+      setStudents(updatedList);
+    }
   };
 
   // CSV Report Generator
@@ -114,14 +132,23 @@ export default function App() {
         padding: '15px 30px', 
         backgroundColor: darkMode ? '#111115' : '#0056b3', 
         color: '#fff',
-        alignItems: 'center'
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '10px'
       }}>
         <h2>🎓 Student Dashboard Project 
           <span style={{ backgroundColor: '#dc3545', color: 'white', borderRadius: '50%', padding: '2px 8px', fontSize: '14px', marginLeft: '10px' }}>
             {notifications.length}
           </span>
         </h2>
+
+        {/* Live Digital Clock Widget */}
+        <div style={{ backgroundColor: 'rgba(255,255,255,0.15)', padding: '6px 12px', borderRadius: '4px', fontWeight: 'bold' }}>
+          🕒 Live Time: {currentTime}
+        </div>
+
         <button 
+          type="button"
           onClick={() => setDarkMode(!darkMode)}
           style={{
             padding: '8px 15px', borderRadius: '5px', cursor: 'pointer', border: 'none',
@@ -137,6 +164,7 @@ export default function App() {
         {['dashboard', 'student-list', 'student-profile', 'courses', 'attendance', 'notifications'].map((tab) => (
           <button 
             key={tab} 
+            type="button"
             onClick={() => setActiveTab(tab)}
             style={{
               padding: '10px 18px', borderRadius: '20px', border: 'none', cursor: 'pointer',
@@ -205,7 +233,7 @@ export default function App() {
                   <button type="submit" style={{ padding: '8px 15px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Add</button>
                 </form>
 
-                {/* EXTRA ADVANCED FEATURE: Status Filter Toggle Buttons Row */}
+                {/* Status Filters Toggle */}
                 <div style={{ margin: '15px 0', display: 'flex', gap: '10px' }}>
                   {["All", "Active", "Inactive"].map((type) => (
                     <button
@@ -250,6 +278,7 @@ export default function App() {
                       <th style={{ padding: '12px' }}>Name</th>
                       <th style={{ padding: '12px' }}>Course</th>
                       <th style={{ padding: '12px' }}>Status</th>
+                      <th style={{ padding: '12px', textAlign: 'center' }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -259,9 +288,18 @@ export default function App() {
                         <td style={{ padding: '12px', fontWeight: 'bold' }}>{s.name}</td>
                         <td style={{ padding: '12px' }}>{s.course}</td>
                         <td style={{ padding: '12px', color: s.status === 'Active' ? '#28a745' : '#dc3545' }}>{s.status}</td>
+                        <td style={{ padding: '12px', textAlign: 'center' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteStudent(s.id, s.name)}
+                            style={{ padding: '4px 10px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
+                          >
+                            🗑️ Delete
+                          </button>
+                        </td>
                       </tr>
                     )) : (
-                      <tr><td colSpan={4} style={{ padding: '20px', textAlign: 'center' }}>No students match the active status/search filter.</td></tr>
+                      <tr><td colSpan={5} style={{ padding: '20px', textAlign: 'center' }}>No students match the selected filter constraints.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -299,12 +337,12 @@ export default function App() {
               </div>
             )}
 
-            {/* PAGE 5: ATTENDANCE (WITH EXTRA ANALYTICS CARDS ROW) */}
+            {/* PAGE 5: ATTENDANCE */}
             {activeTab === 'attendance' && (
               <div>
                 <h3>Attendance Track Logs</h3>
 
-                {/* EXTRA ADVANCED FEATURE: Attendance Analytics Ribbon Dashboard */}
+                {/* Attendance Analytics Ribbon */}
                 <div style={{ display: 'flex', gap: '15px', margin: '15px 0', flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, padding: '15px', background: '#e3f2fd', color: '#0d47a1', borderRadius: '6px', fontWeight: 'bold' }}>
                     📊 Avg Attendance Rate: {avgAttendance}%
