@@ -16,16 +16,21 @@ const MOCK_NOTIFICATIONS = [
 ];
 
 export default function App() {
-  // Safe State Hooks with Array Initialization
+  // Navigation & UI States
   const [activeTab, setActiveTab] = useState('dashboard');
   const [darkMode, setDarkMode] = useState(false);
   
+  // Data States
   const [students, setStudents] = useState(MOCK_STUDENTS);
   const [courses, setCourses] = useState(MOCK_COURSES);
   const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // EXTRA ADVANCED FEATURE 1: Status Filter State (All / Active / Inactive)
+  const [statusFilter, setStatusFilter] = useState("All");
+
+  // Form Inputs State (Add Student Feature)
   const [newStudentName, setNewStudentName] = useState("");
   const [newStudentCourse, setNewStudentCourse] = useState("React JS");
 
@@ -43,13 +48,23 @@ export default function App() {
     fetchData();
   }, []);
 
-  // Filter Logic
-  const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    student.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Advanced Search + EXTRA Status Filter Combined Logic
+  const filteredStudents = students.filter(student => {
+    const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          student.id.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    if (statusFilter === "All") return matchesSearch;
+    return matchesSearch && student.status === statusFilter;
+  });
 
-  // Safe Explicit Form handler without TypeScript strict type bindings
+  // EXTRA ADVANCED FEATURE 2: Attendance Analytics Calculations
+  const totalStudentsCount = students.length;
+  const avgAttendance = totalStudentsCount > 0 
+    ? Math.round(students.reduce((acc, s) => acc + parseInt(s.attendance), 0) / totalStudentsCount) 
+    : 0;
+  const lowAttendanceCount = students.filter(s => parseInt(s.attendance) < 85).length;
+
+  // Dynamic Add Student Function
   const handleAddStudent = (e) => {
     e.preventDefault();
     if (!newStudentName.trim()) return alert("Please enter a student name!");
@@ -59,7 +74,7 @@ export default function App() {
       id: nextId,
       name: newStudentName,
       course: newStudentCourse,
-      attendance: "100%", 
+      attendance: "80%", // Dynamic default test value to test low attendance logic
       status: "Active"
     };
 
@@ -190,6 +205,25 @@ export default function App() {
                   <button type="submit" style={{ padding: '8px 15px', backgroundColor: '#28a745', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>Add</button>
                 </form>
 
+                {/* EXTRA ADVANCED FEATURE: Status Filter Toggle Buttons Row */}
+                <div style={{ margin: '15px 0', display: 'flex', gap: '10px' }}>
+                  {["All", "Active", "Inactive"].map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setStatusFilter(type)}
+                      style={{
+                        padding: '6px 15px', borderRadius: '4px', border: '1px solid #0056b3', cursor: 'pointer',
+                        backgroundColor: statusFilter === type ? '#0056b3' : 'transparent',
+                        color: statusFilter === type ? '#fff' : '#0056b3',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      {type} Status
+                    </button>
+                  ))}
+                </div>
+
                 {/* Operations strip */}
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center', margin: '15px 0', flexWrap: 'wrap' }}>
                   <input 
@@ -219,14 +253,16 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredStudents.map(s => (
+                    {filteredStudents.length > 0 ? filteredStudents.map(s => (
                       <tr key={s.id} style={{ borderBottom: '1px solid #ddd' }}>
                         <td style={{ padding: '12px' }}>{s.id}</td>
                         <td style={{ padding: '12px', fontWeight: 'bold' }}>{s.name}</td>
                         <td style={{ padding: '12px' }}>{s.course}</td>
                         <td style={{ padding: '12px', color: s.status === 'Active' ? '#28a745' : '#dc3545' }}>{s.status}</td>
                       </tr>
-                    ))}
+                    )) : (
+                      <tr><td colSpan={4} style={{ padding: '20px', textAlign: 'center' }}>No students match the active status/search filter.</td></tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -263,21 +299,32 @@ export default function App() {
               </div>
             )}
 
-            {/* PAGE 5: ATTENDANCE */}
+            {/* PAGE 5: ATTENDANCE (WITH EXTRA ANALYTICS CARDS ROW) */}
             {activeTab === 'attendance' && (
               <div>
                 <h3>Attendance Track Logs</h3>
+
+                {/* EXTRA ADVANCED FEATURE: Attendance Analytics Ribbon Dashboard */}
+                <div style={{ display: 'flex', gap: '15px', margin: '15px 0', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, padding: '15px', background: '#e3f2fd', color: '#0d47a1', borderRadius: '6px', fontWeight: 'bold' }}>
+                    📊 Avg Attendance Rate: {avgAttendance}%
+                  </div>
+                  <div style={{ flex: 1, padding: '15px', background: '#ffebee', color: '#c62828', borderRadius: '6px', fontWeight: 'bold' }}>
+                    🚨 Low Attendance (&lt;85%): {lowAttendanceCount} Students
+                  </div>
+                </div>
+
                 <div style={{ marginTop: '15px' }}>
                   {students.map(s => (
                     <div key={s.id} style={{ padding: '15px', background: darkMode ? '#2d2d35' : '#fff', marginBottom: '10px', borderRadius: '5px', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                         <span><strong>{s.name}</strong> ({s.id})</span>
-                        <span style={{ color: '#0056b3', fontWeight: 'bold' }}>{s.attendance}</span>
+                        <span style={{ color: parseInt(s.attendance) >= 85 ? '#28a745' : '#dc3545', fontWeight: 'bold' }}>{s.attendance}</span>
                       </div>
                       <div style={{ width: '100%', backgroundColor: '#ddd', borderRadius: '5px', height: '8px', overflow: 'hidden' }}>
                         <div style={{ 
                           width: s.attendance, 
-                          backgroundColor: parseInt(s.attendance) >= 90 ? '#28a745' : '#ffc107', 
+                          backgroundColor: parseInt(s.attendance) >= 85 ? '#28a745' : '#ffc107', 
                           height: '100%' 
                         }}></div>
                       </div>
